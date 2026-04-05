@@ -450,11 +450,12 @@ function app() {
 
     // ── TO-DO ──
     get filteredTodos() {
-      const today = new Date().toISOString().split('T')[0];
-      if (this.todoFilter==='All') return this.todos;
-      if (this.todoFilter==='Done') return this.todos.filter(t=>t.done);
-      if (this.todoFilter==='Overdue') return this.todos.filter(t=>this.isOverdue(t.deadline,t.done));
-      return this.todos.filter(t=>t.priority===this.todoFilter && !t.done);
+      const order = { High:0, Medium:1, Low:2 };
+      const sort = arr => [...arr].sort((a,b) => order[a.priority] - order[b.priority]);
+      if (this.todoFilter==='All') return sort(this.todos);
+      if (this.todoFilter==='Done') return sort(this.todos.filter(t=>t.done));
+      if (this.todoFilter==='Overdue') return sort(this.todos.filter(t=>this.isOverdue(t.deadline,t.done)));
+      return sort(this.todos.filter(t=>t.priority===this.todoFilter && !t.done));
     },
     addTodo() {
       if (!this.newTodo.title.trim()) return;
