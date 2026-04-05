@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Productivity App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'sans-serif'] },
+      colors: {
+        primary: '#6366f1',
+        'primary-light': '#eef2ff',
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+  .tab-active { border-bottom: 2px solid #6366f1; color: #6366f1; font-weight: 600; }
+  .priority-high { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .priority-medium { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+  .priority-low { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .status-planning { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+  .status-active { background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; }
+  .status-done { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  input, textarea, select { outline: none; }
+  input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 2px #a5b4fc; }
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #f1f5f9; } ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 99px; }
+  .completed-task { opacity: 0.5; }
+  .completed-task .task-title { text-decoration: line-through; }
+</style>
+</head>
+<body x-data="app()" x-init="init()" class="min-h-screen">
+
+<!-- Header -->
+<header class="bg-white border-b border-slate-100 sticky top-0 z-50 shadow-sm">
+  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      <span class="font-semibold text-slate-800 text-lg tracking-tight">MySpace</span>
+    </div>
+    <span class="text-xs text-slate-400" x-text="today"></span>
+  </div>
+  <!-- Tabs -->
+  <div class="max-w-4xl mx-auto px-4 flex gap-6 border-t border-slate-100">
+    <template x-for="tab in tabs" :key="tab.id">
+      <button @click="activeTab=tab.id" :class="activeTab===tab.id ? 'tab-active' : 'text-slate-400 hover:text-slate-600'"
+        class="py-3 text-sm transition-all duration-150 flex items-center gap-1.5" x-text="tab.label"></button>
+    </template>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-8">
+
+  <!-- ═══════════ TO-DO TAB ═══════════ -->
+  <div x-show="activeTab==='todo'" class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-800">To-Do List</h2>
+        <p class="text-xs text-slate-400 mt-0.5" x-text="`${todos.filter(t=>!t.done).length} remaining · ${todos.filter(t=>t.done).length} done`"></p>
+      </div>
+      <button @click="showTodoForm=!showTodoForm" class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition">
+        <span x-text="showTodoForm ? '✕ Cancel' : '+ Add Task'"></span>
+      </button>
+    </div>
+
+    <!-- Add Task Form -->
+    <div x-show="showTodoForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+      <div class="grid grid-cols-1 gap-3">
+        <input x-model="newTodo.title" placeholder="Task title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
+        <textarea x-model="newTodo.notes" placeholder="Notes (optional)..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
+        <div class="flex gap-3 flex-wrap">
+          <select x-model="newTodo.priority" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
+            <option value="High">🔴 High Priority</option>
+            <option value="Medium" selected>🟡 Medium Priority</option>
+            <option value="Low">🟢 Low Priority</option>
+          </select>
+          <input type="date" x-model="newTodo.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
+        </div>
+        <button @click="addTodo()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Add Task</button>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="flex gap-2 mb-5 flex-wrap">
+      <template x-for="f in ['All','High','Medium','Low','Done']" :key="f">
+        <button @click="todoFilter=f" :class="todoFilter===f ? 'bg-indigo-500 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300'"
+          class="text-xs px-3 py-1.5 rounded-full transition font-medium" x-text="f"></button>
+      </template>
+    </div>
+
+    <!-- Task List -->
+    <div class="space-y-3">
+      <template x-for="(todo, i) in filteredTodos" :key="todo.id">
+        <div :class="todo.done ? 'completed-task' : ''" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex gap-4 items-start group transition hover:shadow-md">
+          <button @click="toggleTodo(todo.id)" class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition"
+            :class="todo.done ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 hover:border-indigo-400'">
+            <svg x-show="todo.done" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </button>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <span class="task-title font-medium text-slate-700 text-sm" x-text="todo.title"></span>
+              <span :class="`priority-${todo.priority.toLowerCase()}`" class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" x-text="todo.priority"></span>
+            </div>
+            <p x-show="todo.notes" class="text-xs text-slate-400 mt-1" x-text="todo.notes"></p>
+            <div class="flex items-center gap-3 mt-2">
+              <span x-show="todo.deadline" class="text-xs text-slate-400 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span x-text="todo.deadline"></span>
+              </span>
+            </div>
+          </div>
+          <button @click="deleteTodo(todo.id)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition text-lg leading-none">✕</button>
+        </div>
+      </template>
+      <p x-show="filteredTodos.length===0" class="text-center text-slate-400 text-sm py-12">No tasks here. Add one above!</p>
+    </div>
+  </div>
+
+  <!-- ═══════════ DAILY LOG TAB ═══════════ -->
+  <div x-show="activeTab==='log'" class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-800">Daily Log</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Your personal journal</p>
+      </div>
+      <button @click="showLogForm=!showLogForm" class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition">
+        <span x-text="showLogForm ? '✕ Cancel' : '+ New Entry'"></span>
+      </button>
+    </div>
+
+    <!-- New Entry Form -->
+    <div x-show="showLogForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+      <div class="flex items-center gap-3 mb-3">
+        <input type="date" x-model="newLog.date" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700"/>
+        <select x-model="newLog.mood" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white">
+          <option value="😊">😊 Great</option>
+          <option value="🙂">🙂 Good</option>
+          <option value="😐">😐 Okay</option>
+          <option value="😔">😔 Low</option>
+        </select>
+      </div>
+      <input x-model="newLog.title" placeholder="Entry title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 mb-3"/>
+      <textarea x-model="newLog.body" placeholder="What happened today? Thoughts, wins, reflections..." rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none mb-3"></textarea>
+      <button @click="addLog()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition w-full">Save Entry</button>
+    </div>
+
+    <!-- Log Entries -->
+    <div class="space-y-4">
+      <template x-for="entry in logs" :key="entry.id">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group hover:shadow-md transition">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl" x-text="entry.mood"></span>
+              <div>
+                <p class="font-medium text-slate-700 text-sm" x-text="entry.title"></p>
+                <p class="text-xs text-slate-400" x-text="entry.date"></p>
+              </div>
+            </div>
+            <button @click="deleteLog(entry.id)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition text-lg">✕</button>
+          </div>
+          <p class="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap" x-text="entry.body"></p>
+        </div>
+      </template>
+      <p x-show="logs.length===0" class="text-center text-slate-400 text-sm py-12">No log entries yet. Write your first one!</p>
+    </div>
+  </div>
+
+  <!-- ═══════════ PROJECT PLANNER TAB ═══════════ -->
+  <div x-show="activeTab==='projects'" class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-800">Project Planner</h2>
+        <p class="text-xs text-slate-400 mt-0.5" x-text="`${projects.length} project${projects.length!==1?'s':''} total`"></p>
+      </div>
+      <button @click="showProjectForm=!showProjectForm" class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition">
+        <span x-text="showProjectForm ? '✕ Cancel' : '+ New Project'"></span>
+      </button>
+    </div>
+
+    <!-- New Project Form -->
+    <div x-show="showProjectForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+      <div class="grid gap-3">
+        <input x-model="newProject.name" placeholder="Project name..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
+        <textarea x-model="newProject.description" placeholder="Description & goals..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
+        <div class="flex gap-3 flex-wrap">
+          <select x-model="newProject.status" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
+            <option value="Planning">📋 Planning</option>
+            <option value="Active">⚡ Active</option>
+            <option value="Done">✅ Done</option>
+          </select>
+          <input type="date" x-model="newProject.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
+        </div>
+        <input x-model="newProject.milestonesRaw" placeholder="Milestones (comma separated)..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
+        <button @click="addProject()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Create Project</button>
+      </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <template x-for="proj in projects" :key="proj.id">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group hover:shadow-md transition flex flex-col">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+              <p class="font-semibold text-slate-800 text-base" x-text="proj.name"></p>
+              <p x-show="proj.deadline" class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span x-text="proj.deadline"></span>
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select x-model="proj.status" @change="saveProjects()" :class="`status-${proj.status.toLowerCase()}`" class="text-xs px-2 py-1 rounded-full border font-medium bg-transparent cursor-pointer">
+                <option value="Planning">📋 Planning</option>
+                <option value="Active">⚡ Active</option>
+                <option value="Done">✅ Done</option>
+              </select>
+              <button @click="deleteProject(proj.id)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 transition text-lg">✕</button>
+            </div>
+          </div>
+          <p x-show="proj.description" class="text-sm text-slate-500 mb-3 leading-relaxed" x-text="proj.description"></p>
+          <!-- Milestones -->
+          <div x-show="proj.milestones && proj.milestones.length" class="mt-auto">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Milestones</p>
+            <div class="space-y-1.5">
+              <template x-for="(ms, mi) in proj.milestones" :key="mi">
+                <div class="flex items-center gap-2">
+                  <button @click="toggleMilestone(proj.id, mi)" :class="ms.done ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300 hover:border-indigo-400'"
+                    class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition">
+                    <svg x-show="ms.done" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                  </button>
+                  <span :class="ms.done ? 'line-through text-slate-400' : 'text-slate-600'" class="text-xs" x-text="ms.label"></span>
+                </div>
+              </template>
+            </div>
+            <!-- Progress bar -->
+            <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-indigo-400 rounded-full transition-all" :style="`width:${proj.milestones.filter(m=>m.done).length/proj.milestones.length*100}%`"></div>
+            </div>
+            <p class="text-right text-xs text-slate-400 mt-1" x-text="`${proj.milestones.filter(m=>m.done).length}/${proj.milestones.length} done`"></p>
+          </div>
+        </div>
+      </template>
+    </div>
+    <p x-show="projects.length===0" class="text-center text-slate-400 text-sm py-12">No projects yet. Create your first one!</p>
+  </div>
+
+</main>
+
+<script>
+function app() {
+  return {
+    activeTab: 'todo',
+    today: '',
+    tabs: [
+      { id: 'todo', label: '✅ To-Do' },
+      { id: 'log', label: '📓 Daily Log' },
+      { id: 'projects', label: '📁 Projects' },
+    ],
+    // To-Do
+    todos: [],
+    showTodoForm: false,
+    todoFilter: 'All',
+    newTodo: { title:'', notes:'', priority:'Medium', deadline:'' },
+    // Log
+    logs: [],
+    showLogForm: false,
+    newLog: { date:'', mood:'😊', title:'', body:'' },
+    // Projects
+    projects: [],
+    showProjectForm: false,
+    newProject: { name:'', description:'', status:'Planning', deadline:'', milestonesRaw:'' },
+
+    init() {
+      const d = new Date();
+      this.today = d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      const iso = d.toISOString().split('T')[0];
+      this.newLog.date = iso;
+      this.todos = JSON.parse(localStorage.getItem('myspace_todos') || '[]');
+      this.logs = JSON.parse(localStorage.getItem('myspace_logs') || '[]');
+      this.projects = JSON.parse(localStorage.getItem('myspace_projects') || '[]');
+    },
+
+    get filteredTodos() {
+      if (this.todoFilter === 'All') return this.todos;
+      if (this.todoFilter === 'Done') return this.todos.filter(t => t.done);
+      return this.todos.filter(t => t.priority === this.todoFilter && !t.done);
+    },
+
+    addTodo() {
+      if (!this.newTodo.title.trim()) return;
+      this.todos.unshift({ id: Date.now(), ...this.newTodo, done: false });
+      this.newTodo = { title:'', notes:'', priority:'Medium', deadline:'' };
+      this.showTodoForm = false;
+      this.saveTodos();
+    },
+    toggleTodo(id) {
+      const t = this.todos.find(t => t.id === id);
+      if (t) t.done = !t.done;
+      this.saveTodos();
+    },
+    deleteTodo(id) {
+      this.todos = this.todos.filter(t => t.id !== id);
+      this.saveTodos();
+    },
+    saveTodos() { localStorage.setItem('myspace_todos', JSON.stringify(this.todos)); },
+
+    addLog() {
+      if (!this.newLog.body.trim()) return;
+      this.logs.unshift({ id: Date.now(), ...this.newLog });
+      this.newLog = { date: new Date().toISOString().split('T')[0], mood:'😊', title:'', body:'' };
+      this.showLogForm = false;
+      this.saveLogs();
+    },
+    deleteLog(id) {
+      this.logs = this.logs.filter(l => l.id !== id);
+      this.saveLogs();
+    },
+    saveLogs() { localStorage.setItem('myspace_logs', JSON.stringify(this.logs)); },
+
+    addProject() {
+      if (!this.newProject.name.trim()) return;
+      const milestones = this.newProject.milestonesRaw
+        .split(',').map(s => s.trim()).filter(Boolean)
+        .map(label => ({ label, done: false }));
+      this.projects.unshift({ id: Date.now(), ...this.newProject, milestones });
+      this.newProject = { name:'', description:'', status:'Planning', deadline:'', milestonesRaw:'' };
+      this.showProjectForm = false;
+      this.saveProjects();
+    },
+    deleteProject(id) {
+      this.projects = this.projects.filter(p => p.id !== id);
+      this.saveProjects();
+    },
+    toggleMilestone(projId, mi) {
+      const p = this.projects.find(p => p.id === projId);
+      if (p) p.milestones[mi].done = !p.milestones[mi].done;
+      this.saveProjects();
+    },
+    saveProjects() { localStorage.setItem('myspace_projects', JSON.stringify(this.projects)); },
+  }
+}
+</script>
+</body>
+</html>
