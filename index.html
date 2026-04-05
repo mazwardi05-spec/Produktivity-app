@@ -2,499 +2,856 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>MySpace Productivity</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Personal OS</title>
+<meta name="theme-color" content="#a0896b"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Personal OS"/>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Personal%20OS%22,%22short_name%22:%22PersonalOS%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f5f0e8%22,%22theme_color%22:%22%23a0896b%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20viewBox%3D'0%200%20512%20512'%3E%3Crect%20width%3D'512'%20height%3D'512'%20rx%3D'80'%20fill%3D'%23a0896b'/%3E%3Ctext%20x%3D'256'%20y%3D'340'%20font-size%3D'260'%20text-anchor%3D'middle'%20fill%3D'white'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22,%22purpose%22:%22any%20maskable%22}]}"/>
 <script>
-tailwind.config = {
-  theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } }
+if('serviceWorker' in navigator){
+  const sw=`const C='pos-v1';const A=[location.href];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>r)));});`;
+  const b=new Blob([sw],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(b)).catch(()=>{});
 }
 </script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{
+  wood:'#a0896b','wood-light':'#c4a882','wood-dark':'#7d6a52',
+  cream:'#f5f0e8','cream-dark':'#ede6d6','parchment:':#e8dfd0',
+  ink:'#2c2825','ink-light':'#5a5248','ink-muted':'#8c8480',
+  moss:'#6b7c5c','moss-light':'#8fa07a',
+  clay:'#b5714a','clay-light':'#d4906a',
+  sage:'#7a8f7e','ash':'#b8b0a8'
+},fontFamily:{sans:['system-ui','-apple-system','sans-serif']}}}}
+</script>
 <style>
-* { box-sizing: border-box; }
-body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-.tab-active { border-bottom: 2px solid #6366f1; color: #6366f1; font-weight: 600; }
-.priority-High { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-.priority-Medium { background:#fffbeb; color:#d97706; border:1px solid #fde68a; }
-.priority-Low { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
-.status-Planning { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
-.status-Active { background:#fefce8; color:#ca8a04; border:1px solid #fef08a; }
-.status-Done { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
-.overdue { border-left: 3px solid #f87171 !important; }
-input,textarea,select { outline:none; }
-input:focus,textarea:focus,select:focus { box-shadow:0 0 0 2px #a5b4fc; }
-.fade-in { animation:fadeIn .2s ease; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-.completed-task { opacity:.5; }
-.completed-task .task-title { text-decoration:line-through; }
-::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:#f1f5f9} ::-webkit-scrollbar-thumb{background:#c7d2fe;border-radius:99px}
-/* Toast */
-.toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; display:flex; flex-direction:column; gap:.5rem; pointer-events:none; }
-.toast-item { background:#1e293b; color:#fff; padding:.75rem 1.1rem; border-radius:1rem; font-size:.8rem; box-shadow:0 4px 20px rgba(0,0,0,.15);
-  animation: slideIn .3s ease; pointer-events:auto; display:flex; align-items:center; gap:.6rem; max-width:320px; }
-@keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
-.toast-item.overdue-toast { border-left:3px solid #f87171; }
-/* Modal overlay */
-.modal-bg { position:fixed;inset:0;background:rgba(15,23,42,.35);backdrop-filter:blur(2px);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem; }
-.modal { background:#fff;border-radius:1.5rem;padding:1.75rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.15); }
+:root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#f5f0e8;color:#2c2825;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;height:100dvh;}
+/* Scrollbars */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#c4a882;border-radius:99px;}
+/* Transitions */
+.slide-up{animation:slideUp .28s cubic-bezier(.4,0,.2,1);}
+.fade-in{animation:fadeIn .2s ease;}
+.scale-in{animation:scaleIn .22s cubic-bezier(.4,0,.2,1);}
+@keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+/* Fullscreen overlay */
+.fs-overlay{position:fixed;inset:0;z-index:50;background:#f5f0e8;overflow:hidden;display:flex;flex-direction:column;}
+.fs-overlay.hidden{display:none!important;}
+/* Sidebar */
+#sidebar{width:220px;flex-shrink:0;}
+/* Bottom nav */
+#bottom-nav{padding-bottom:calc(.75rem + var(--safe-bot,0px));}
+/* Focus mode editor */
+#editor-area{resize:none;background:transparent;outline:none;line-height:1.85;font-size:1rem;}
+/* Task priority dots */
+.dot-high{background:#b5714a;} .dot-med{background:#a0896b;} .dot-low{background:#7a8f7e;}
+/* Checkbox custom */
+.cb{width:18px;height:18px;border:1.5px solid #c4a882;border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cb.checked{background:#a0896b;border-color:#a0896b;}
+/* Folder card */
+.folder-card{transition:transform .15s,box-shadow .15s;}
+.folder-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(160,137,107,.18);}
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(44,40,37,.45);z-index:80;display:flex;align-items:flex-end;justify-content:center;}
+@media(min-width:640px){.modal-bg{align-items:center;}}
+.modal-box{background:#f5f0e8;border-radius:1.25rem 1.25rem 0 0;width:100%;max-width:520px;padding:1.75rem;padding-bottom:calc(1.75rem + var(--safe-bot,0px));max-height:90vh;overflow-y:auto;}
+@media(min-width:640px){.modal-box{border-radius:1.25rem;padding-bottom:1.75rem;}}
+/* Input */
+.inp{width:100%;border:1.5px solid #ded8cc;border-radius:.65rem;padding:.6rem .85rem;background:#faf7f2;color:#2c2825;font-size:.875rem;outline:none;transition:border .15s;}
+.inp:focus{border-color:#a0896b;}
+/* Btn */
+.btn-wood{background:#a0896b;color:#faf7f2;border:none;border-radius:.65rem;padding:.6rem 1.25rem;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .15s;}
+.btn-wood:hover{background:#8a7560;}
+.btn-ghost{background:transparent;border:1.5px solid #c4a882;border-radius:.65rem;padding:.55rem 1rem;font-size:.875rem;color:#5a5248;cursor:pointer;transition:all .15s;}
+.btn-ghost:hover{background:#ede6d6;}
+/* Nav active */
+.nav-active{color:#a0896b!important;}
+.nav-active .nav-dot{opacity:1!important;}
+/* Tag */
+.tag-high{background:#f5ede6;color:#b5714a;border:1px solid #e8c9b4;}
+.tag-med{background:#f0ece4;color:#7d6a52;border:1px solid #d4c4aa;}
+.tag-low{background:#eef1ec;color:#6b7c5c;border:1px solid #b8c8b4;}
+/* Rich text toolbar */
+.rte-btn{background:transparent;border:1px solid #ded8cc;border-radius:.4rem;padding:.2rem .5rem;font-size:.8rem;cursor:pointer;color:#5a5248;}
+.rte-btn:hover{background:#ede6d6;}
+[contenteditable]{outline:none;line-height:1.85;}
+/* Notification toast */
+.n-toast{position:fixed;top:calc(1rem + var(--safe-top,0px));right:1rem;z-index:200;background:#2c2825;color:#f5f0e8;padding:.75rem 1.1rem;border-radius:.85rem;font-size:.8rem;max-width:300px;box-shadow:0 4px 20px rgba(44,40,37,.3);animation:slideUp .3s ease;border-left:3px solid #a0896b;}
+/* Sidebar active */
+.sb-active{background:#ede6d6;color:#2c2825!important;}
+/* Project tab active */
+.ptab-active{border-bottom:2px solid #a0896b;color:#a0896b;}
 </style>
 </head>
-<body x-data="app()" x-init="init()" class="min-h-screen">
+<body>
 
-<!-- Toast Container -->
-<div class="toast">
-  <template x-for="t in toasts" :key="t.id">
-    <div class="toast-item" :class="t.type==='overdue' ? 'overdue-toast' : ''" x-text="t.msg"
-      @click="removeToast(t.id)" style="cursor:pointer" :title="'Click to dismiss'"></div>
-  </template>
+<!-- ══════════════════════════════════════════
+     NOTIFICATION TOASTS
+══════════════════════════════════════════ -->
+<div id="toast-container" style="position:fixed;top:calc(1rem + env(safe-area-inset-top));right:1rem;z-index:200;display:flex;flex-direction:column;gap:.5rem;pointer-events:none;"></div>
+
+<!-- ══════════════════════════════════════════
+     MODAL (shared, dynamic content)
+══════════════════════════════════════════ -->
+<div id="modal" class="modal-bg hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box scale-in" id="modal-box"></div>
 </div>
 
-<!-- ══════ EDIT MODAL ══════ -->
-<div x-show="editModal.open" x-transition.opacity class="modal-bg" @click.self="editModal.open=false">
-  <div class="modal fade-in" @click.stop>
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-semibold text-slate-800 text-base" x-text="editModal.type==='todo'?'Edit Task':editModal.type==='log'?'Edit Log Entry':'Edit Project'"></h3>
-      <button @click="editModal.open=false" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
-    </div>
+<!-- ══════════════════════════════════════════
+     FULLSCREEN OVERLAYS
+══════════════════════════════════════════ -->
+<!-- Note Focus Mode -->
+<div id="fs-notes" class="fs-overlay hidden">
+  <div style="background:#f5f0e8;border-bottom:1px solid #ede6d6;padding:.85rem 1.1rem;display:flex;align-items:center;gap:.75rem;padding-top:calc(.85rem + env(safe-area-inset-top));">
+    <button onclick="closeFS('fs-notes')" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#8c8480;">←</button>
+    <span id="fs-notes-title" style="font-weight:600;font-size:1rem;color:#2c2825;flex:1;"></span>
+    <button onclick="openNoteEditor(null)" class="btn-wood" style="padding:.4rem .85rem;font-size:.8rem;">+ Note</button>
+  </div>
+  <div id="fs-notes-list" style="flex:1;overflow-y:auto;padding:1rem;"></div>
+</div>
 
-    <!-- TODO edit -->
-    <template x-if="editModal.type==='todo'">
-      <div class="grid gap-3">
-        <input x-model="editModal.data.title" placeholder="Task title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <textarea x-model="editModal.data.notes" placeholder="Notes..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
-        <div class="flex gap-3 flex-wrap">
-          <select x-model="editModal.data.priority" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-            <option value="High">🔴 High Priority</option>
-            <option value="Medium">🟡 Medium Priority</option>
-            <option value="Low">🟢 Low Priority</option>
-          </select>
-          <input type="date" x-model="editModal.data.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-        </div>
-        <button @click="saveEdit()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Save Changes</button>
-      </div>
-    </template>
-
-    <!-- LOG edit -->
-    <template x-if="editModal.type==='log'">
-      <div class="grid gap-3">
-        <div class="flex gap-3 flex-wrap">
-          <input type="date" x-model="editModal.data.date" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-          <select x-model="editModal.data.mood" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-            <option value="😊">😊 Great</option>
-            <option value="🙂">🙂 Good</option>
-            <option value="😐">😐 Okay</option>
-            <option value="😔">😔 Low</option>
-          </select>
-        </div>
-        <input x-model="editModal.data.title" placeholder="Entry title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <textarea x-model="editModal.data.body" placeholder="What happened today?..." rows="5" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
-        <button @click="saveEdit()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Save Changes</button>
-      </div>
-    </template>
-
-    <!-- PROJECT edit -->
-    <template x-if="editModal.type==='project'">
-      <div class="grid gap-3">
-        <input x-model="editModal.data.name" placeholder="Project name..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <textarea x-model="editModal.data.description" placeholder="Description & goals..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
-        <div class="flex gap-3 flex-wrap">
-          <select x-model="editModal.data.status" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-            <option value="Planning">📋 Planning</option>
-            <option value="Active">⚡ Active</option>
-            <option value="Done">✅ Done</option>
-          </select>
-          <input type="date" x-model="editModal.data.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-        </div>
-        <input x-model="editModal.data.milestonesRaw" placeholder="Milestones (comma separated)..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <button @click="saveEdit()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Save Changes</button>
-      </div>
-    </template>
+<!-- Note Editor -->
+<div id="fs-editor" class="fs-overlay hidden">
+  <div style="background:#f5f0e8;border-bottom:1px solid #ede6d6;padding:.85rem 1.1rem;display:flex;align-items:center;gap:.75rem;padding-top:calc(.85rem + env(safe-area-inset-top));">
+    <button onclick="closeFS('fs-editor')" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#8c8480;">←</button>
+    <input id="editor-title" class="inp" style="flex:1;font-weight:600;" placeholder="Note title…"/>
+    <button onclick="saveNote()" class="btn-wood" style="padding:.4rem .85rem;font-size:.8rem;">Save</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:1.25rem 1.5rem;">
+    <textarea id="editor-area" class="inp" style="width:100%;min-height:calc(100vh - 120px);border:none;padding:0;font-size:1rem;line-height:1.85;resize:none;background:transparent;" placeholder="Start writing…"></textarea>
   </div>
 </div>
 
-<!-- Header -->
-<header class="bg-white border-b border-slate-100 sticky top-0 z-50 shadow-sm">
-  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-      </div>
-      <span class="font-semibold text-slate-800 text-lg tracking-tight">MySpace</span>
-    </div>
-    <div class="flex items-center gap-3">
-      <span x-show="overdueCount>0" class="text-xs bg-red-100 text-red-600 font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
-        <span>⚠️</span><span x-text="overdueCount+' overdue'"></span>
-      </span>
-      <span class="text-xs text-slate-400" x-text="today"></span>
+<!-- Project Workspace -->
+<div id="fs-project" class="fs-overlay hidden">
+  <div style="background:#f5f0e8;border-bottom:1px solid #ede6d6;padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;padding-top:calc(.85rem + env(safe-area-inset-top));">
+    <button onclick="closeFS('fs-project')" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#8c8480;">←</button>
+    <div style="flex:1;">
+      <div id="fs-proj-name" style="font-weight:700;font-size:1.05rem;color:#2c2825;"></div>
+      <div id="fs-proj-desc" style="font-size:.75rem;color:#8c8480;"></div>
     </div>
   </div>
-  <div class="max-w-4xl mx-auto px-4 flex gap-6 border-t border-slate-100">
-    <template x-for="tab in tabs" :key="tab.id">
-      <button @click="activeTab=tab.id" :class="activeTab===tab.id?'tab-active':'text-slate-400 hover:text-slate-600'"
-        class="py-3 text-sm transition-all duration-150" x-text="tab.label"></button>
-    </template>
+  <!-- Project Tabs -->
+  <div style="display:flex;border-bottom:1px solid #ede6d6;background:#f5f0e8;">
+    <button class="ptab-active" id="ptab-tasks" onclick="switchPTab('tasks')" style="flex:1;padding:.7rem;font-size:.82rem;background:none;border:none;cursor:pointer;border-bottom:2px solid #a0896b;color:#a0896b;font-weight:500;">Tasks</button>
+    <button id="ptab-notes" onclick="switchPTab('notes')" style="flex:1;padding:.7rem;font-size:.82rem;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;color:#8c8480;font-weight:500;">Meeting Notes</button>
+    <button id="ptab-brief" onclick="switchPTab('brief')" style="flex:1;padding:.7rem;font-size:.82rem;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;color:#8c8480;font-weight:500;">Brief</button>
   </div>
-</header>
+  <!-- Tab panels -->
+  <div id="ptab-panel-tasks" style="flex:1;overflow-y:auto;padding:1rem;"></div>
+  <div id="ptab-panel-notes" style="flex:1;overflow-y:auto;padding:1rem;display:none;"></div>
+  <div id="ptab-panel-brief" style="flex:1;overflow-y:auto;padding:1rem;display:none;"></div>
+</div>
 
-<main class="max-w-4xl mx-auto px-4 py-8">
+<!-- ══════════════════════════════════════════
+     MAIN LAYOUT
+══════════════════════════════════════════ -->
+<div style="display:flex;height:100dvh;overflow:hidden;">
 
-  <!-- ═══ TO-DO ═══ -->
-  <div x-show="activeTab==='todo'" class="fade-in">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-xl font-semibold text-slate-800">To-Do List</h2>
-        <p class="text-xs text-slate-400 mt-0.5" x-text="`${todos.filter(t=>!t.done).length} remaining · ${todos.filter(t=>t.done).length} done`"></p>
-      </div>
-      <button @click="showTodoForm=!showTodoForm" class="bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition" x-text="showTodoForm?'✕ Cancel':'+ Add Task'"></button>
+  <!-- SIDEBAR (desktop) -->
+  <aside id="sidebar" class="hidden lg:flex" style="flex-direction:column;background:#ede6d6;border-right:1px solid #d9d0c4;padding:1.5rem .85rem;gap:.3rem;flex-shrink:0;overflow-y:auto;padding-top:calc(1.5rem + env(safe-area-inset-top));">
+    <div style="padding:.5rem .75rem 1.25rem;font-weight:700;font-size:1.05rem;color:#2c2825;letter-spacing:.02em;">✦ Personal OS</div>
+    <button onclick="setPage('tasks')" id="sb-tasks" class="sb-active" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:.65rem;border:none;cursor:pointer;font-size:.875rem;color:#5a5248;text-align:left;width:100%;transition:all .15s;">
+      <span>☑</span> Task Manager
+    </button>
+    <button onclick="setPage('notes')" id="sb-notes" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:.65rem;border:none;cursor:pointer;font-size:.875rem;color:#5a5248;text-align:left;width:100%;transition:all .15s;background:transparent;">
+      <span>📓</span> Knowledge Base
+    </button>
+    <button onclick="setPage('projects')" id="sb-projects" style="display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:.65rem;border:none;cursor:pointer;font-size:.875rem;color:#5a5248;text-align:left;width:100%;transition:all .15s;background:transparent;">
+      <span>◈</span> Projects
+    </button>
+    <div style="margin-top:auto;padding:.75rem;border-top:1px solid #d9d0c4;">
+      <div style="font-size:.72rem;color:#b8b0a8;">Personal OS v1.0</div>
     </div>
-    <div x-show="showTodoForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-      <div class="grid gap-3">
-        <input x-model="newTodo.title" placeholder="Task title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <textarea x-model="newTodo.notes" placeholder="Notes (optional)..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
-        <div class="flex gap-3 flex-wrap">
-          <select x-model="newTodo.priority" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-            <option value="High">🔴 High Priority</option>
-            <option value="Medium" selected>🟡 Medium Priority</option>
-            <option value="Low">🟢 Low Priority</option>
-          </select>
-          <input type="date" x-model="newTodo.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-        </div>
-        <button @click="addTodo()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Add Task</button>
-      </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+    <!-- Mobile header -->
+    <div class="lg:hidden" style="background:#f5f0e8;border-bottom:1px solid #ede6d6;padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;padding-top:calc(.85rem + env(safe-area-inset-top));flex-shrink:0;">
+      <span style="font-weight:700;font-size:1rem;color:#2c2825;">✦ Personal OS</span>
+      <span id="mobile-page-label" style="font-size:.8rem;color:#8c8480;">Task Manager</span>
     </div>
-    <div class="flex gap-2 mb-5 flex-wrap">
-      <template x-for="f in ['All','High','Medium','Low','Done','Overdue']" :key="f">
-        <button @click="todoFilter=f" :class="todoFilter===f?'bg-indigo-500 text-white':'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300'"
-          class="text-xs px-3 py-1.5 rounded-full transition font-medium" x-text="f"></button>
-      </template>
-    </div>
-    <div class="space-y-3">
-      <template x-for="todo in filteredTodos" :key="todo.id">
-        <div :class="[todo.done?'completed-task':'', isOverdue(todo.deadline,todo.done)?'overdue':'']"
-          class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex gap-4 items-start group transition hover:shadow-md">
-          <button @click="toggleTodo(todo.id)" class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition"
-            :class="todo.done?'bg-indigo-500 border-indigo-500':'border-slate-300 hover:border-indigo-400'">
-            <svg x-show="todo.done" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-          </button>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between gap-2">
-              <span class="task-title font-medium text-slate-700 text-sm" x-text="todo.title"></span>
-              <span :class="`priority-${todo.priority}`" class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" x-text="todo.priority"></span>
+
+    <!-- Pages -->
+    <div style="flex:1;overflow:hidden;position:relative;">
+
+      <!-- ── TASKS PAGE ── -->
+      <div id="page-tasks" style="position:absolute;inset:0;overflow-y:auto;padding:1.25rem;" class="slide-up">
+        <div style="max-width:720px;margin:0 auto;">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <div>
+              <h1 style="font-size:1.3rem;font-weight:700;color:#2c2825;">Task Manager</h1>
+              <p style="font-size:.78rem;color:#8c8480;" id="task-date"></p>
             </div>
-            <p x-show="todo.notes" class="text-xs text-slate-400 mt-1" x-text="todo.notes"></p>
-            <div class="flex items-center gap-3 mt-2">
-              <span x-show="todo.deadline" class="text-xs flex items-center gap-1" :class="isOverdue(todo.deadline,todo.done)?'text-red-400 font-medium':'text-slate-400'">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span x-text="(isOverdue(todo.deadline,todo.done)?'⚠ Overdue · ':'')+todo.deadline"></span>
-              </span>
+            <div style="display:flex;gap:.5rem;">
+              <button onclick="openModal('folder-task')" class="btn-ghost" style="font-size:.8rem;padding:.45rem .8rem;">+ Folder</button>
+              <button onclick="openModal('add-task')" class="btn-wood" style="font-size:.8rem;padding:.45rem .85rem;">+ Task</button>
             </div>
           </div>
-          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-            <button @click="openEdit('todo', todo)" class="text-slate-300 hover:text-indigo-400 transition px-1 text-base" title="Edit">✏️</button>
-            <button @click="deleteTodo(todo.id)" class="text-slate-300 hover:text-red-400 transition px-1 text-lg" title="Delete">✕</button>
-          </div>
+          <!-- Folder filter tabs -->
+          <div id="task-folder-tabs" style="display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1rem;scrollbar-width:none;"></div>
+          <!-- Active tasks -->
+          <div id="task-list" style="display:flex;flex-direction:column;gap:.6rem;"></div>
+          <!-- Done section -->
+          <div id="done-section" style="margin-top:1.5rem;"></div>
         </div>
-      </template>
-      <p x-show="filteredTodos.length===0" class="text-center text-slate-400 text-sm py-12">No tasks here. Add one above!</p>
-    </div>
-  </div>
+      </div>
 
-  <!-- ═══ DAILY LOG ═══ -->
-  <div x-show="activeTab==='log'" class="fade-in">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-xl font-semibold text-slate-800">Daily Log</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Your personal journal</p>
-      </div>
-      <button @click="showLogForm=!showLogForm" class="bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition" x-text="showLogForm?'✕ Cancel':'+ New Entry'"></button>
-    </div>
-    <div x-show="showLogForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-      <div class="flex gap-3 mb-3 flex-wrap">
-        <input type="date" x-model="newLog.date" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-        <select x-model="newLog.mood" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-          <option value="😊">😊 Great</option>
-          <option value="🙂">🙂 Good</option>
-          <option value="😐">😐 Okay</option>
-          <option value="😔">😔 Low</option>
-        </select>
-      </div>
-      <input x-model="newLog.title" placeholder="Entry title..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 mb-3"/>
-      <textarea x-model="newLog.body" placeholder="What happened today? Thoughts, wins, reflections..." rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none mb-3"></textarea>
-      <button @click="addLog()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition w-full">Save Entry</button>
-    </div>
-    <div class="space-y-4">
-      <template x-for="entry in logs" :key="entry.id">
-        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group hover:shadow-md transition">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl" x-text="entry.mood"></span>
-              <div>
-                <p class="font-medium text-slate-700 text-sm" x-text="entry.title || '(No title)'"></p>
-                <p class="text-xs text-slate-400" x-text="entry.date"></p>
-              </div>
+      <!-- ── NOTES PAGE ── -->
+      <div id="page-notes" style="position:absolute;inset:0;overflow-y:auto;padding:1.25rem;display:none;">
+        <div style="max-width:720px;margin:0 auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <div>
+              <h1 style="font-size:1.3rem;font-weight:700;color:#2c2825;">Knowledge Base</h1>
+              <p style="font-size:.78rem;color:#8c8480;">Your personal library</p>
             </div>
-            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-              <button @click="openEdit('log', entry)" class="text-slate-300 hover:text-indigo-400 transition px-1 text-base" title="Edit">✏️</button>
-              <button @click="deleteLog(entry.id)" class="text-slate-300 hover:text-red-400 transition px-1 text-lg" title="Delete">✕</button>
-            </div>
+            <button onclick="openModal('folder-note')" class="btn-wood" style="font-size:.8rem;padding:.45rem .85rem;">+ Folder</button>
           </div>
-          <p class="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap" x-text="entry.body"></p>
+          <div id="note-folders-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;"></div>
         </div>
-      </template>
-      <p x-show="logs.length===0" class="text-center text-slate-400 text-sm py-12">No log entries yet. Write your first one!</p>
-    </div>
-  </div>
+      </div>
 
-  <!-- ═══ PROJECTS ═══ -->
-  <div x-show="activeTab==='projects'" class="fade-in">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-xl font-semibold text-slate-800">Project Planner</h2>
-        <p class="text-xs text-slate-400 mt-0.5" x-text="`${projects.length} project${projects.length!==1?'s':''} total`"></p>
-      </div>
-      <button @click="showProjectForm=!showProjectForm" class="bg-indigo-500 hover:bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl transition" x-text="showProjectForm?'✕ Cancel':'+ New Project'"></button>
-    </div>
-    <div x-show="showProjectForm" x-transition class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-      <div class="grid gap-3">
-        <input x-model="newProject.name" placeholder="Project name..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <textarea x-model="newProject.description" placeholder="Description & goals..." rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 resize-none"></textarea>
-        <div class="flex gap-3 flex-wrap">
-          <select x-model="newProject.status" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-white flex-1">
-            <option value="Planning">📋 Planning</option>
-            <option value="Active">⚡ Active</option>
-            <option value="Done">✅ Done</option>
-          </select>
-          <input type="date" x-model="newProject.deadline" class="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 flex-1"/>
-        </div>
-        <input x-model="newProject.milestonesRaw" placeholder="Milestones (comma separated)..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700"/>
-        <button @click="addProject()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition">Create Project</button>
-      </div>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <template x-for="proj in projects" :key="proj.id">
-        <div :class="isOverdue(proj.deadline, proj.status==='Done') ? 'overdue' : ''"
-          class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 group hover:shadow-md transition flex flex-col">
-          <div class="flex items-start justify-between mb-2">
-            <div class="flex-1 pr-2">
-              <p class="font-semibold text-slate-800 text-base" x-text="proj.name"></p>
-              <p x-show="proj.deadline" class="text-xs mt-0.5 flex items-center gap-1" :class="isOverdue(proj.deadline,proj.status==='Done')?'text-red-400 font-medium':'text-slate-400'">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span x-text="(isOverdue(proj.deadline,proj.status==='Done')?'⚠ Overdue · ':'')+proj.deadline"></span>
-              </p>
+      <!-- ── PROJECTS PAGE ── -->
+      <div id="page-projects" style="position:absolute;inset:0;overflow-y:auto;padding:1.25rem;display:none;">
+        <div style="max-width:720px;margin:0 auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <div>
+              <h1 style="font-size:1.3rem;font-weight:700;color:#2c2825;">Projects</h1>
+              <p style="font-size:.78rem;color:#8c8480;">Command center</p>
             </div>
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span :class="`status-${proj.status}`" class="text-xs px-2 py-0.5 rounded-full border font-medium" x-text="proj.status==='Planning'?'📋 Planning':proj.status==='Active'?'⚡ Active':'✅ Done'"></span>
-              <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                <button @click="openEdit('project', proj)" class="text-slate-300 hover:text-indigo-400 transition px-1 text-base" title="Edit">✏️</button>
-                <button @click="deleteProject(proj.id)" class="text-slate-300 hover:text-red-400 transition px-1 text-lg" title="Delete">✕</button>
-              </div>
-            </div>
+            <button onclick="openModal('add-project')" class="btn-wood" style="font-size:.8rem;padding:.45rem .85rem;">+ Project</button>
           </div>
-          <p x-show="proj.description" class="text-sm text-slate-500 mb-3 leading-relaxed" x-text="proj.description"></p>
-          <div x-show="proj.milestones && proj.milestones.length" class="mt-auto">
-            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Milestones</p>
-            <div class="space-y-1.5">
-              <template x-for="(ms, mi) in proj.milestones" :key="mi">
-                <div class="flex items-center gap-2">
-                  <button @click="toggleMilestone(proj.id, mi)" :class="ms.done?'bg-indigo-500 border-indigo-500':'border-slate-300 hover:border-indigo-400'"
-                    class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition">
-                    <svg x-show="ms.done" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                  </button>
-                  <span :class="ms.done?'line-through text-slate-400':'text-slate-600'" class="text-xs" x-text="ms.label"></span>
-                </div>
-              </template>
-            </div>
-            <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div class="h-full bg-indigo-400 rounded-full transition-all" :style="`width:${proj.milestones.length?proj.milestones.filter(m=>m.done).length/proj.milestones.length*100:0}%`"></div>
-            </div>
-            <p class="text-right text-xs text-slate-400 mt-1" x-text="`${proj.milestones.filter(m=>m.done).length}/${proj.milestones.length} done`"></p>
-          </div>
+          <div id="project-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
         </div>
-      </template>
-    </div>
-    <p x-show="projects.length===0" class="text-center text-slate-400 text-sm py-12">No projects yet. Create your first one!</p>
-  </div>
+      </div>
 
-</main>
+    </div><!-- /pages -->
+
+    <!-- BOTTOM NAV (mobile) -->
+    <nav id="bottom-nav" class="lg:hidden" style="background:#f5f0e8;border-top:1px solid #ede6d6;display:flex;align-items:center;justify-content:space-around;padding:.65rem 0;flex-shrink:0;">
+      <button onclick="setPage('tasks')" id="bn-tasks" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:#a0896b;font-size:.65rem;font-weight:500;">
+        <span style="font-size:1.2rem;">☑</span> Tasks
+        <div class="nav-dot" style="width:4px;height:4px;border-radius:50%;background:#a0896b;opacity:1;margin-top:1px;"></div>
+      </button>
+      <button onclick="setPage('notes')" id="bn-notes" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:#8c8480;font-size:.65rem;font-weight:500;">
+        <span style="font-size:1.2rem;">📓</span> Notes
+        <div class="nav-dot" style="width:4px;height:4px;border-radius:50%;background:#a0896b;opacity:0;margin-top:1px;"></div>
+      </button>
+      <button onclick="setPage('projects')" id="bn-projects" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:#8c8480;font-size:.65rem;font-weight:500;">
+        <span style="font-size:1.2rem;">◈</span> Projects
+        <div class="nav-dot" style="width:4px;height:4px;border-radius:50%;background:#a0896b;opacity:0;margin-top:1px;"></div>
+      </button>
+    </nav>
+
+  </div><!-- /main content -->
+</div><!-- /layout -->
 
 <script>
-function app() {
-  return {
-    activeTab: 'todo',
-    today: '',
-    tabs: [
-      { id:'todo', label:'✅ To-Do' },
-      { id:'log',  label:'📓 Daily Log' },
-      { id:'projects', label:'📁 Projects' },
-    ],
-    todos: [], showTodoForm: false, todoFilter: 'All',
-    newTodo: { title:'', notes:'', priority:'Medium', deadline:'' },
-    logs: [], showLogForm: false,
-    newLog: { date:'', mood:'😊', title:'', body:'' },
-    projects: [], showProjectForm: false,
-    newProject: { name:'', description:'', status:'Planning', deadline:'', milestonesRaw:'' },
-    toasts: [],
-    editModal: { open: false, type: '', data: {}, originalId: null },
+// ══════════════════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════════════════
+const DB = {
+  get(k){ try{ return JSON.parse(localStorage.getItem('pos_'+k)||'null'); }catch(e){ return null; }},
+  set(k,v){ localStorage.setItem('pos_'+k,JSON.stringify(v)); },
+  def(k,d){ if(this.get(k)===null) this.set(k,d); return this.get(k); }
+};
 
-    init() {
-      const d = new Date();
-      this.today = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-      this.newLog.date = d.toISOString().split('T')[0];
-      this.todos    = JSON.parse(localStorage.getItem('myspace_todos')    || '[]');
-      this.logs     = JSON.parse(localStorage.getItem('myspace_logs')     || '[]');
-      this.projects = JSON.parse(localStorage.getItem('myspace_projects') || '[]');
-      this.checkDeadlines();
-      // Re-check every minute
-      setInterval(() => this.checkDeadlines(), 60000);
-      // Ask browser notification permission
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    },
+// Init default data
+let taskFolders  = DB.def('taskFolders',  []);
+let tasks        = DB.def('tasks',        []);
+let noteFolders  = DB.def('noteFolders',  []);
+let notes        = DB.def('notes',        []);
+let projects     = DB.def('projects',     []);
 
-    get overdueCount() {
-      const td = this.todos.filter(t => this.isOverdue(t.deadline, t.done)).length;
-      const pd = this.projects.filter(p => this.isOverdue(p.deadline, p.status==='Done')).length;
-      return td + pd;
-    },
+function save(){
+  DB.set('taskFolders', taskFolders);
+  DB.set('tasks',       tasks);
+  DB.set('noteFolders', noteFolders);
+  DB.set('notes',       notes);
+  DB.set('projects',    projects);
+}
 
-    isOverdue(deadline, isDone) {
-      if (!deadline || isDone) return false;
-      return deadline < new Date().toISOString().split('T')[0];
-    },
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+let currentPage = 'tasks';
+const pageLabels = { tasks:'Task Manager', notes:'Knowledge Base', projects:'Projects' };
 
-    checkDeadlines() {
-      const today = new Date().toISOString().split('T')[0];
-      const notified = JSON.parse(localStorage.getItem('myspace_notified') || '[]');
+function setPage(p){
+  currentPage = p;
+  ['tasks','notes','projects'].forEach(id=>{
+    document.getElementById('page-'+id).style.display = id===p ? 'block' : 'none';
+    // sidebar
+    const sb = document.getElementById('sb-'+id);
+    if(sb){ sb.className = id===p ? 'sb-active' : ''; sb.style.background = id===p ? '' : 'transparent'; }
+    // bottom nav
+    const bn = document.getElementById('bn-'+id);
+    if(bn){
+      bn.style.color = id===p ? '#a0896b' : '#8c8480';
+      bn.querySelector('.nav-dot').style.opacity = id===p ? '1' : '0';
+    }
+  });
+  document.getElementById('mobile-page-label').textContent = pageLabels[p];
+  if(p==='tasks') renderTasks();
+  if(p==='notes') renderNoteFolders();
+  if(p==='projects') renderProjects();
+}
 
-      const check = (items, labelFn, doneFn) => {
-        items.forEach(item => {
-          if (!item.deadline || doneFn(item)) return;
-          const key = `${item.id}_${item.deadline}`;
-          if (notified.includes(key)) return;
-          if (item.deadline <= today) {
-            const label = labelFn(item);
-            const msg = item.deadline === today
-              ? `⏰ Deadline today: "${label}"`
-              : `⚠️ Overdue: "${label}" (was ${item.deadline})`;
-            this.showToast(msg, 'overdue');
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('MySpace Reminder', { body: msg, icon: '' });
-            }
-            notified.push(key);
-          }
-        });
-      };
+// ══════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════
+let modalType='';
+function openModal(type, data={}){
+  modalType=type;
+  const box = document.getElementById('modal-box');
+  box.innerHTML = buildModal(type, data);
+  box.className = 'modal-box scale-in';
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal(){
+  document.getElementById('modal').classList.add('hidden');
+}
 
-      check(this.todos, t => t.title, t => t.done);
-      check(this.projects, p => p.name, p => p.status === 'Done');
-      localStorage.setItem('myspace_notified', JSON.stringify(notified));
-    },
+function buildModal(type, data){
+  const folders = taskFolders.map(f=>`<option value="${f.id}" ${data.folderId===f.id?'selected':''}>${esc(f.name)}</option>`).join('');
+  const nFolders = noteFolders.map(f=>`<option value="${f.id}" ${data.folderId===f.id?'selected':''}>${esc(f.name)}</option>`).join('');
 
-    showToast(msg, type='info') {
-      const id = Date.now() + Math.random();
-      this.toasts.push({ id, msg, type });
-      setTimeout(() => this.removeToast(id), 7000);
-    },
-    removeToast(id) { this.toasts = this.toasts.filter(t => t.id !== id); },
+  if(type==='folder-task') return `
+    <h2 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:#2c2825;">New Task Folder</h2>
+    <input class="inp" id="m-fname" placeholder="Folder name (e.g. Master's Degree)" style="margin-bottom:1rem;"/>
+    <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-wood" onclick="addTaskFolder()">Create</button>
+    </div>`;
 
-    // ── EDIT MODAL ──
-    openEdit(type, item) {
-      this.editModal.type = type;
-      this.editModal.originalId = item.id;
-      if (type === 'todo') {
-        this.editModal.data = { title: item.title, notes: item.notes||'', priority: item.priority, deadline: item.deadline||'' };
-      } else if (type === 'log') {
-        this.editModal.data = { date: item.date, mood: item.mood, title: item.title||'', body: item.body };
-      } else if (type === 'project') {
-        this.editModal.data = {
-          name: item.name, description: item.description||'', status: item.status,
-          deadline: item.deadline||'',
-          milestonesRaw: item.milestones ? item.milestones.map(m=>m.label).join(', ') : '',
-          _existingMilestones: item.milestones || []
-        };
-      }
-      this.editModal.open = true;
-    },
+  if(type==='add-task') return `
+    <h2 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:#2c2825;">${data.id?'Edit Task':'New Task'}</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <input class="inp" id="m-ttitle" placeholder="Task title…" value="${esc(data.title||'')}"/>
+      <select class="inp" id="m-tpriority">
+        <option value="high" ${data.priority==='high'?'selected':''}>🔴 High Priority</option>
+        <option value="med" ${(!data.priority||data.priority==='med')?'selected':''}>🟡 Medium Priority</option>
+        <option value="low" ${data.priority==='low'?'selected':''}>🟢 Low Priority</option>
+      </select>
+      <input class="inp" id="m-tdeadline" type="datetime-local" value="${data.deadline||''}"/>
+      <select class="inp" id="m-tfolder">
+        <option value="">No folder</option>${folders}
+      </select>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-wood" onclick="saveTask('${data.id||''}')">${data.id?'Save':'Add Task'}</button>
+      </div>
+    </div>`;
 
-    saveEdit() {
-      const id = this.editModal.originalId;
-      const d = this.editModal.data;
-      if (this.editModal.type === 'todo') {
-        const t = this.todos.find(t => t.id === id);
-        if (t) Object.assign(t, { title: d.title, notes: d.notes, priority: d.priority, deadline: d.deadline });
-        this.saveTodos();
-      } else if (this.editModal.type === 'log') {
-        const l = this.logs.find(l => l.id === id);
-        if (l) Object.assign(l, { date: d.date, mood: d.mood, title: d.title, body: d.body });
-        this.saveLogs();
-      } else if (this.editModal.type === 'project') {
-        const p = this.projects.find(p => p.id === id);
-        if (p) {
-          // Merge milestones: keep done state for existing, add new ones
-          const newLabels = d.milestonesRaw.split(',').map(s=>s.trim()).filter(Boolean);
-          const existing = d._existingMilestones || [];
-          const milestones = newLabels.map(label => {
-            const found = existing.find(m => m.label === label);
-            return found ? found : { label, done: false };
-          });
-          Object.assign(p, { name: d.name, description: d.description, status: d.status, deadline: d.deadline, milestones });
-        }
-        this.saveProjects();
-      }
-      this.editModal.open = false;
-      this.showToast('✅ Changes saved!');
-    },
+  if(type==='folder-note') return `
+    <h2 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:#2c2825;">New Note Folder</h2>
+    <input class="inp" id="m-nfname" placeholder="Folder name (e.g. Book Summaries)"/>
+    <div style="margin-top:.75rem;display:flex;gap:.6rem;justify-content:flex-end;">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-wood" onclick="addNoteFolder()">Create</button>
+    </div>`;
 
-    // ── TO-DO ──
-    get filteredTodos() {
-      const order = { High:0, Medium:1, Low:2 };
-      const sort = arr => [...arr].sort((a,b) => order[a.priority] - order[b.priority]);
-      if (this.todoFilter==='All') return sort(this.todos);
-      if (this.todoFilter==='Done') return sort(this.todos.filter(t=>t.done));
-      if (this.todoFilter==='Overdue') return sort(this.todos.filter(t=>this.isOverdue(t.deadline,t.done)));
-      return sort(this.todos.filter(t=>t.priority===this.todoFilter && !t.done));
-    },
-    addTodo() {
-      if (!this.newTodo.title.trim()) return;
-      this.todos.unshift({ id:Date.now(), ...this.newTodo, done:false });
-      this.newTodo = { title:'', notes:'', priority:'Medium', deadline:'' };
-      this.showTodoForm = false;
-      this.saveTodos();
-      this.checkDeadlines();
-    },
-    toggleTodo(id) { const t=this.todos.find(t=>t.id===id); if(t) t.done=!t.done; this.saveTodos(); },
-    deleteTodo(id) { this.todos=this.todos.filter(t=>t.id!==id); this.saveTodos(); },
-    saveTodos() { localStorage.setItem('myspace_todos', JSON.stringify(this.todos)); },
+  if(type==='add-project') return `
+    <h2 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:#2c2825;">${data.id?'Edit Project':'New Project'}</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <input class="inp" id="m-pname" placeholder="Project name…" value="${esc(data.name||'')}"/>
+      <input class="inp" id="m-pdesc" placeholder="Short description…" value="${esc(data.description||'')}"/>
+      <select class="inp" id="m-pstatus">
+        <option value="active" ${(!data.status||data.status==='active')?'selected':''}>⚡ Active</option>
+        <option value="planning" ${data.status==='planning'?'selected':''}>📋 Planning</option>
+        <option value="done" ${data.status==='done'?'selected':''}>✅ Done</option>
+      </select>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-wood" onclick="saveProject('${data.id||''}')">${data.id?'Save':'Create'}</button>
+      </div>
+    </div>`;
 
-    // ── LOG ──
-    addLog() {
-      if (!this.newLog.body.trim()) return;
-      this.logs.unshift({ id:Date.now(), ...this.newLog });
-      this.newLog = { date:new Date().toISOString().split('T')[0], mood:'😊', title:'', body:'' };
-      this.showLogForm = false;
-      this.saveLogs();
-    },
-    deleteLog(id) { this.logs=this.logs.filter(l=>l.id!==id); this.saveLogs(); },
-    saveLogs() { localStorage.setItem('myspace_logs', JSON.stringify(this.logs)); },
+  if(type==='add-project-task') return `
+    <h2 style="font-weight:700;font-size:1rem;margin-bottom:1rem;color:#2c2825;">New Project Task</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <input class="inp" id="m-pttitle" placeholder="Task…"/>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-wood" onclick="addProjectTask('${data.projectId}')">Add</button>
+      </div>
+    </div>`;
 
-    // ── PROJECTS ──
-    addProject() {
-      if (!this.newProject.name.trim()) return;
-      const milestones = this.newProject.milestonesRaw.split(',').map(s=>s.trim()).filter(Boolean).map(label=>({label,done:false}));
-      this.projects.unshift({ id:Date.now(), ...this.newProject, milestones });
-      this.newProject = { name:'', description:'', status:'Planning', deadline:'', milestonesRaw:'' };
-      this.showProjectForm = false;
-      this.saveProjects();
-      this.checkDeadlines();
-    },
-    deleteProject(id) { this.projects=this.projects.filter(p=>p.id!==id); this.saveProjects(); },
-    toggleMilestone(projId, mi) { const p=this.projects.find(p=>p.id===projId); if(p) p.milestones[mi].done=!p.milestones[mi].done; this.saveProjects(); },
-    saveProjects() { localStorage.setItem('myspace_projects', JSON.stringify(this.projects)); },
+  return '';
+}
+
+// ══════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function fmtTime(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
+
+// Toast
+function toast(msg, color='#a0896b'){
+  const el=document.createElement('div');
+  el.className='n-toast';
+  el.style.borderLeftColor=color;
+  el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),5000);
+}
+
+// ══════════════════════════════════════════════════
+// TASK MANAGER
+// ══════════════════════════════════════════════════
+let activeTaskFolder = '';
+
+function addTaskFolder(){
+  const n = document.getElementById('m-fname').value.trim();
+  if(!n) return;
+  taskFolders.push({id:uid(), name:n});
+  save(); closeModal(); renderTasks();
+}
+
+function saveTask(editId){
+  const title = document.getElementById('m-ttitle').value.trim();
+  if(!title) return;
+  const priority = document.getElementById('m-tpriority').value;
+  const deadline = document.getElementById('m-tdeadline').value;
+  const folderId = document.getElementById('m-tfolder').value;
+  if(editId){
+    const t = tasks.find(x=>x.id===editId);
+    if(t){ Object.assign(t,{title,priority,deadline,folderId}); }
+  } else {
+    tasks.push({id:uid(),title,priority,deadline,folderId,done:false,createdAt:new Date().toISOString()});
+  }
+  save(); closeModal(); renderTasks();
+  if(deadline) scheduleNotification(deadline, title);
+}
+
+function toggleTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.done = !t.done;
+  t.completedAt = t.done ? new Date().toISOString() : null;
+  save(); renderTasks();
+}
+
+function deleteTask(id){
+  tasks = tasks.filter(x=>x.id!==id);
+  save(); renderTasks();
+}
+
+function renderTasks(){
+  // Date header
+  document.getElementById('task-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+  // Folder tabs
+  const tabs = document.getElementById('task-folder-tabs');
+  tabs.innerHTML = `
+    <button onclick="setTaskFolder('')" style="white-space:nowrap;padding:.35rem .85rem;border-radius:99px;border:1.5px solid ${activeTaskFolder===''?'#a0896b':'#d9d0c4'};background:${activeTaskFolder===''?'#a0896b':'transparent'};color:${activeTaskFolder===''?'#faf7f2':'#5a5248'};font-size:.78rem;cursor:pointer;">All</button>
+    ${taskFolders.map(f=>`
+      <button onclick="setTaskFolder('${f.id}')" style="white-space:nowrap;padding:.35rem .85rem;border-radius:99px;border:1.5px solid ${activeTaskFolder===f.id?'#a0896b':'#d9d0c4'};background:${activeTaskFolder===f.id?'#a0896b':'transparent'};color:${activeTaskFolder===f.id?'#faf7f2':'#5a5248'};font-size:.78rem;cursor:pointer;">${esc(f.name)}</button>
+    `).join('')}`;
+
+  // Filter tasks
+  let visible = activeTaskFolder ? tasks.filter(t=>t.folderId===activeTaskFolder) : tasks;
+  const active = visible.filter(t=>!t.done).sort((a,b)=>{
+    const po={high:0,med:1,low:2}; return po[a.priority]-po[b.priority];
+  });
+  const done = visible.filter(t=>t.done);
+
+  // Active tasks
+  const list = document.getElementById('task-list');
+  if(active.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:2.5rem 1rem;color:#b8b0a8;font-size:.875rem;">No active tasks — well done ✦</div>`;
+  } else {
+    list.innerHTML = active.map(t => taskCard(t)).join('');
+  }
+
+  // Done section
+  const ds = document.getElementById('done-section');
+  if(done.length===0){ ds.innerHTML=''; return; }
+  ds.innerHTML = `
+    <div style="font-size:.78rem;font-weight:600;color:#8c8480;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.65rem;">Completed (${done.length})</div>
+    <div style="display:flex;flex-direction:column;gap:.5rem;opacity:.7;">
+      ${done.map(t=>taskCard(t)).join('')}
+    </div>`;
+}
+
+function taskCard(t){
+  const pClass = {high:'tag-high',med:'tag-med',low:'tag-low'}[t.priority]||'tag-med';
+  const pLabel = {high:'High',med:'Med',low:'Low'}[t.priority]||'Med';
+  const isOverdue = t.deadline && !t.done && new Date(t.deadline)<new Date();
+  const folder = taskFolders.find(f=>f.id===t.folderId);
+  return `
+    <div style="background:#faf7f2;border:1px solid #ede6d6;border-radius:.9rem;padding:.85rem 1rem;display:flex;align-items:flex-start;gap:.75rem;${isOverdue?'border-left:3px solid #b5714a;':''}" class="fade-in">
+      <div class="cb ${t.done?'checked':''}" onclick="toggleTask('${t.id}')" style="margin-top:.1rem;">
+        ${t.done?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>':''}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.9rem;font-weight:500;color:${t.done?'#b8b0a8':'#2c2825'};${t.done?'text-decoration:line-through;':''};word-break:break-word;">${esc(t.title)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem;align-items:center;">
+          <span class="${pClass}" style="font-size:.7rem;padding:.15rem .5rem;border-radius:99px;">${pLabel}</span>
+          ${folder?`<span style="font-size:.7rem;color:#8c8480;background:#ede6d6;padding:.15rem .5rem;border-radius:99px;">${esc(folder.name)}</span>`:''}
+          ${t.deadline?`<span style="font-size:.7rem;color:${isOverdue?'#b5714a':'#8c8480'};">${isOverdue?'⚠ ':''}${fmtDate(t.deadline)}</span>`:''}
+          ${t.done&&t.completedAt?`<span style="font-size:.7rem;color:#8c8480;">Done at ${fmtTime(t.completedAt)}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:.25rem;flex-shrink:0;">
+        ${!t.done?`<button onclick="openModal('add-task',${JSON.stringify(t).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:#b8b0a8;padding:.15rem .3rem;" title="Edit">✏</button>`:''}
+        <button onclick="deleteTask('${t.id}')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:#b8b0a8;padding:.15rem .3rem;" title="Delete">✕</button>
+      </div>
+    </div>`;
+}
+
+function setTaskFolder(id){
+  activeTaskFolder = id;
+  renderTasks();
+}
+
+// ══════════════════════════════════════════════════
+// NOTIFICATIONS / DEADLINE SCHEDULER
+// ══════════════════════════════════════════════════
+const scheduledNotifs = new Set();
+
+function scheduleNotification(deadlineIso, title){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='default') Notification.requestPermission();
+  const key = deadlineIso+'|'+title;
+  if(scheduledNotifs.has(key)) return;
+  scheduledNotifs.add(key);
+  const ms = new Date(deadlineIso).getTime() - Date.now();
+  if(ms<=0){
+    fireNotif(title, deadlineIso); return;
+  }
+  // 1 hour before
+  const ms1h = ms - 3600000;
+  if(ms1h>0) setTimeout(()=>fireNotif(title, deadlineIso, '1 hour'), ms1h);
+  // At deadline
+  setTimeout(()=>fireNotif(title, deadlineIso), ms);
+}
+
+function fireNotif(title, deadlineIso, when=''){
+  const msg = when ? `⏰ "${title}" is due in ${when}!` : `🔔 Task due now: "${title}"`;
+  toast(msg, '#b5714a');
+  if(Notification.permission==='granted'){
+    try{ new Notification('Personal OS', {body:msg, icon:''}); }catch(e){}
   }
 }
+
+function initNotifications(){
+  if(Notification.permission==='default') Notification.requestPermission();
+  tasks.filter(t=>!t.done&&t.deadline).forEach(t=>{
+    const ms = new Date(t.deadline).getTime()-Date.now();
+    if(ms>0) scheduleNotification(t.deadline, t.title);
+    else if(ms>-86400000) toast(`⚠ Overdue: "${t.title}"`, '#b5714a');
+  });
+}
+
+// ══════════════════════════════════════════════════
+// KNOWLEDGE BASE (NOTES)
+// ══════════════════════════════════════════════════
+let currentNoteFolder = null;
+let currentNoteId = null;
+
+function addNoteFolder(){
+  const n = document.getElementById('m-nfname').value.trim();
+  if(!n) return;
+  noteFolders.push({id:uid(),name:n,icon:'📁',createdAt:new Date().toISOString()});
+  save(); closeModal(); renderNoteFolders();
+}
+
+function deleteNoteFolder(id){
+  noteFolders = noteFolders.filter(f=>f.id!==id);
+  notes = notes.filter(n=>n.folderId!==id);
+  save(); renderNoteFolders();
+}
+
+function renderNoteFolders(){
+  const grid = document.getElementById('note-folders-grid');
+  if(noteFolders.length===0){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem 1rem;color:#b8b0a8;font-size:.875rem;">No folders yet — create one to get started ✦</div>`;
+    return;
+  }
+  grid.innerHTML = noteFolders.map(f=>{
+    const count = notes.filter(n=>n.folderId===f.id).length;
+    return `
+      <div class="folder-card" style="background:#faf7f2;border:1px solid #ede6d6;border-radius:1rem;padding:1.25rem;cursor:pointer;" onclick="openNoteFolder('${f.id}')">
+        <div style="font-size:1.75rem;margin-bottom:.6rem;">📁</div>
+        <div style="font-weight:600;font-size:.9rem;color:#2c2825;margin-bottom:.25rem;">${esc(f.name)}</div>
+        <div style="font-size:.75rem;color:#8c8480;">${count} note${count!==1?'s':''}</div>
+        <div style="margin-top:.85rem;display:flex;justify-content:flex-end;">
+          <button onclick="event.stopPropagation();deleteNoteFolder('${f.id}')" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#c4a882;">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openNoteFolder(folderId){
+  currentNoteFolder = folderId;
+  const folder = noteFolders.find(f=>f.id===folderId);
+  document.getElementById('fs-notes-title').textContent = folder.name;
+  renderNotesList();
+  openFS('fs-notes');
+}
+
+function renderNotesList(){
+  const list = document.getElementById('fs-notes-list');
+  const folderNotes = notes.filter(n=>n.folderId===currentNoteFolder);
+  if(folderNotes.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:3rem 1rem;color:#b8b0a8;font-size:.875rem;">No notes yet — tap "+ Note" to begin</div>`;
+    return;
+  }
+  list.innerHTML = folderNotes.map(n=>`
+    <div style="background:#faf7f2;border:1px solid #ede6d6;border-radius:.9rem;padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;cursor:pointer;" onclick="openNoteEditor('${n.id}')">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:500;font-size:.9rem;color:#2c2825;">${esc(n.title)||'Untitled'}</div>
+        <div style="font-size:.75rem;color:#8c8480;margin-top:.2rem;">${new Date(n.updatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+        <div style="font-size:.78rem;color:#b8b0a8;margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc((n.body||'').slice(0,80))}</div>
+      </div>
+      <button onclick="event.stopPropagation();deleteNote('${n.id}')" style="background:none;border:none;cursor:pointer;color:#c4a882;font-size:.85rem;flex-shrink:0;">✕</button>
+    </div>`).join('');
+}
+
+function openNoteEditor(noteId){
+  currentNoteId = noteId;
+  const note = noteId ? notes.find(n=>n.id===noteId) : null;
+  document.getElementById('editor-title').value = note ? note.title : '';
+  document.getElementById('editor-area').value = note ? note.body : '';
+  openFS('fs-editor');
+}
+
+function saveNote(){
+  const title = document.getElementById('editor-title').value.trim()||'Untitled';
+  const body  = document.getElementById('editor-area').value;
+  if(currentNoteId){
+    const n = notes.find(x=>x.id===currentNoteId);
+    if(n){ n.title=title; n.body=body; n.updatedAt=new Date().toISOString(); }
+  } else {
+    notes.push({id:uid(),folderId:currentNoteFolder,title,body,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+  }
+  save();
+  closeFS('fs-editor');
+  renderNotesList();
+  toast('Note saved ✦');
+}
+
+function deleteNote(id){
+  notes = notes.filter(n=>n.id!==id);
+  save(); renderNotesList();
+}
+
+// ══════════════════════════════════════════════════
+// PROJECTS
+// ══════════════════════════════════════════════════
+let currentProjectId = null;
+let currentPTab = 'tasks';
+
+function saveProject(editId){
+  const name  = document.getElementById('m-pname').value.trim();
+  if(!name) return;
+  const description = document.getElementById('m-pdesc').value.trim();
+  const status      = document.getElementById('m-pstatus').value;
+  if(editId){
+    const p = projects.find(x=>x.id===editId);
+    if(p) Object.assign(p,{name,description,status});
+  } else {
+    projects.push({
+      id:uid(),name,description,status,
+      tasks:[],meetingNotes:'',brief:'',
+      createdAt:new Date().toISOString()
+    });
+  }
+  save(); closeModal(); renderProjects();
+}
+
+function deleteProject(id){
+  projects = projects.filter(p=>p.id!==id);
+  save(); renderProjects();
+}
+
+function renderProjects(){
+  const grid = document.getElementById('project-grid');
+  if(projects.length===0){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:3rem 1rem;color:#b8b0a8;font-size:.875rem;">No projects yet — create your first one ✦</div>`;
+    return;
+  }
+  const statusStyle={active:'background:#eef5e8;color:#6b7c5c;',planning:'background:#eef0f8;color:#5a6080;',done:'background:#f0f0ec;color:#7d7a72;'};
+  const statusLabel={active:'⚡ Active',planning:'📋 Planning',done:'✅ Done'};
+  grid.innerHTML = projects.map(p=>{
+    const done = (p.tasks||[]).filter(t=>t.done).length;
+    const total= (p.tasks||[]).length;
+    const pct  = total ? Math.round(done/total*100) : 0;
+    return `
+      <div class="folder-card" style="background:#faf7f2;border:1px solid #ede6d6;border-radius:1.1rem;padding:1.25rem;cursor:pointer;" onclick="openProjectWorkspace('${p.id}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.65rem;">
+          <div style="font-size:1.6rem;">◈</div>
+          <span style="font-size:.7rem;padding:.2rem .6rem;border-radius:99px;${statusStyle[p.status]||statusStyle.active}">${statusLabel[p.status]||statusLabel.active}</span>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;color:#2c2825;margin-bottom:.2rem;">${esc(p.name)}</div>
+        <div style="font-size:.78rem;color:#8c8480;margin-bottom:.85rem;">${esc(p.description)}</div>
+        ${total?`
+        <div style="margin-bottom:.4rem;">
+          <div style="height:4px;background:#ede6d6;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:#a0896b;border-radius:99px;transition:width .3s;"></div>
+          </div>
+          <div style="font-size:.7rem;color:#b8b0a8;margin-top:.25rem;">${done}/${total} tasks</div>
+        </div>`:''}
+        <div style="display:flex;justify-content:flex-end;gap:.4rem;">
+          <button onclick="event.stopPropagation();openModal('add-project',${JSON.stringify(p).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#c4a882;">Edit</button>
+          <button onclick="event.stopPropagation();deleteProject('${p.id}')" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#c4a882;">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openProjectWorkspace(id){
+  currentProjectId = id;
+  const p = projects.find(x=>x.id===id);
+  document.getElementById('fs-proj-name').textContent = p.name;
+  document.getElementById('fs-proj-desc').textContent = p.description||'';
+  switchPTab('tasks');
+  openFS('fs-project');
+}
+
+function switchPTab(tab){
+  currentPTab = tab;
+  ['tasks','notes','brief'].forEach(t=>{
+    const btn = document.getElementById('ptab-'+t);
+    const panel = document.getElementById('ptab-panel-'+t);
+    if(t===tab){
+      btn.className='ptab-active';
+      btn.style.borderBottom='2px solid #a0896b';
+      btn.style.color='#a0896b';
+      panel.style.display='block';
+    } else {
+      btn.className='';
+      btn.style.borderBottom='2px solid transparent';
+      btn.style.color='#8c8480';
+      panel.style.display='none';
+    }
+  });
+  renderProjectTab(tab);
+}
+
+function renderProjectTab(tab){
+  const p = projects.find(x=>x.id===currentProjectId);
+  if(!p) return;
+
+  if(tab==='tasks'){
+    const panel = document.getElementById('ptab-panel-tasks');
+    const active = (p.tasks||[]).filter(t=>!t.done);
+    const done   = (p.tasks||[]).filter(t=>t.done);
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+        <button class="btn-wood" style="font-size:.8rem;padding:.4rem .85rem;" onclick="openModal('add-project-task',{projectId:'${p.id}'})">+ Task</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        ${active.map(t=>projTaskRow(t,p.id)).join('')}
+        ${done.length?`<div style="margin-top:.75rem;font-size:.75rem;color:#8c8480;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">Done</div>${done.map(t=>projTaskRow(t,p.id)).join('')}`:''}
+      </div>
+      ${active.length===0&&done.length===0?`<div style="text-align:center;padding:2.5rem;color:#b8b0a8;font-size:.875rem;">No tasks yet ✦</div>`:''}
+    `;
+  }
+
+  if(tab==='notes'){
+    const panel = document.getElementById('ptab-panel-notes');
+    panel.innerHTML=`
+      <div style="font-size:.8rem;color:#8c8480;margin-bottom:.75rem;">Meeting notes & transcripts</div>
+      <textarea style="width:100%;min-height:60vh;border:1.5px solid #ede6d6;border-radius:.9rem;padding:1rem;background:#faf7f2;font-size:.9rem;line-height:1.8;resize:none;outline:none;color:#2c2825;" placeholder="Paste meeting notes, transcripts, decisions…" oninput="saveProjField('meetingNotes',this.value)">${esc(p.meetingNotes||'')}</textarea>
+    `;
+  }
+
+  if(tab==='brief'){
+    const panel = document.getElementById('ptab-panel-brief');
+    panel.innerHTML=`
+      <div style="font-size:.8rem;color:#8c8480;margin-bottom:.75rem;">Project goals, resources & context</div>
+      <textarea style="width:100%;min-height:60vh;border:1.5px solid #ede6d6;border-radius:.9rem;padding:1rem;background:#faf7f2;font-size:.9rem;line-height:1.8;resize:none;outline:none;color:#2c2825;" placeholder="Define goals, success metrics, links, stakeholders…" oninput="saveProjField('brief',this.value)">${esc(p.brief||'')}</textarea>
+    `;
+  }
+}
+
+function projTaskRow(t, projId){
+  return `
+    <div style="display:flex;align-items:center;gap:.65rem;padding:.7rem .9rem;background:#faf7f2;border:1px solid #ede6d6;border-radius:.75rem;${t.done?'opacity:.55;':''}" class="fade-in">
+      <div class="cb ${t.done?'checked':''}" onclick="toggleProjectTask('${projId}','${t.id}')">
+        ${t.done?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>':''}
+      </div>
+      <span style="flex:1;font-size:.875rem;color:#2c2825;${t.done?'text-decoration:line-through;color:#b8b0a8;':''}">${esc(t.title)}</span>
+      <button onclick="deleteProjectTask('${projId}','${t.id}')" style="background:none;border:none;cursor:pointer;color:#c4a882;font-size:.85rem;">✕</button>
+    </div>`;
+}
+
+function addProjectTask(projId){
+  const title = document.getElementById('m-pttitle').value.trim();
+  if(!title) return;
+  const p = projects.find(x=>x.id===projId);
+  if(!p) return;
+  if(!p.tasks) p.tasks=[];
+  p.tasks.push({id:uid(),title,done:false,createdAt:new Date().toISOString()});
+  save(); closeModal(); renderProjectTab('tasks');
+}
+
+function toggleProjectTask(projId, taskId){
+  const p = projects.find(x=>x.id===projId);
+  if(!p) return;
+  const t = p.tasks.find(x=>x.id===taskId);
+  if(t){ t.done=!t.done; t.completedAt=t.done?new Date().toISOString():null; }
+  save(); renderProjectTab('tasks'); renderProjects();
+}
+
+function deleteProjectTask(projId, taskId){
+  const p = projects.find(x=>x.id===projId);
+  if(!p) return;
+  p.tasks = p.tasks.filter(x=>x.id!==taskId);
+  save(); renderProjectTab('tasks'); renderProjects();
+}
+
+function saveProjField(field, value){
+  const p = projects.find(x=>x.id===currentProjectId);
+  if(p){ p[field]=value; save(); }
+}
+
+// ══════════════════════════════════════════════════
+// FULLSCREEN HELPERS
+// ══════════════════════════════════════════════════
+function openFS(id){
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById(id).classList.add('slide-up');
+}
+function closeFS(id){
+  document.getElementById(id).classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════
+// INSTALL BANNER
+// ══════════════════════════════════════════════════
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); deferredPrompt=e;
+  toast('💾 Tap here to install Personal OS', '#6b7c5c');
+});
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  setPage('tasks');
+  initNotifications();
+  // Request notification permission politely
+  setTimeout(()=>{
+    if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+  }, 2000);
+});
 </script>
 </body>
 </html>
